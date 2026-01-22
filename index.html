@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EC PRIME BURGUER</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .cart-modal { display: none; }
+        .cart-modal.active { display: flex; }
+    </style>
+</head>
+<body class="bg-zinc-900 text-white font-sans">
+
+    <script>
+        // MUDE PARA true PARA "ABERTO" OU false PARA "FECHADO"
+        const LOJA_ABERTA = true; 
+        const SEU_WHATSAPP = "5511999999999"; // Coloque seu número aqui
+    </script>
+
+    <header class="w-full h-[250px] bg-zinc-800 flex flex-col justify-center items-center border-b-4 border-yellow-500">
+        <h1 class="text-4xl font-bold text-yellow-500">EC PRIME BURGUER</h1>
+        <div id="status-badge" class="mt-4 px-6 py-2 rounded-full font-bold"></div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 mb-24">
+        <h2 class="text-2xl font-bold text-center my-8">Cardápio de Delícias</h2>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="flex gap-4 bg-zinc-800 p-4 rounded-2xl items-center shadow-lg">
+                <div class="w-24 h-24 bg-zinc-700 rounded-lg flex items-center justify-center text-3xl">🍔</div>
+                <div class="flex-1">
+                    <p class="font-bold text-lg">Prime Bacon</p>
+                    <p class="text-sm text-zinc-400">Pão brioche, blend 180g e muito bacon.</p>
+                    <div class="flex items-center justify-between mt-2">
+                        <p class="font-bold text-yellow-500">R$ 35,00</p>
+                        <button onclick="addToCart('Prime Bacon', 35.00)" class="bg-yellow-500 hover:bg-yellow-600 p-2 rounded-lg text-black">
+                            <i class="fa fa-plus"></i> Adicionar
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex gap-4 bg-zinc-800 p-4 rounded-2xl items-center shadow-lg">
+                <div class="w-24 h-24 bg-zinc-700 rounded-lg flex items-center justify-center text-3xl">🍔</div>
+                <div class="flex-1">
+                    <p class="font-bold text-lg">Salad Prime</p>
+                    <p class="text-sm text-zinc-400">Pão, carne 160g, alface e tomate.</p>
+                    <div class="flex items-center justify-between mt-2">
+                        <p class="font-bold text-yellow-500">R$ 28,00</p>
+                        <button onclick="addToCart('Salad Prime', 28.00)" class="bg-yellow-500 hover:bg-yellow-600 p-2 rounded-lg text-black">
+                            <i class="fa fa-plus"></i> Adicionar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="fixed bottom-0 w-full bg-zinc-800 border-t-2 border-zinc-700 p-4 flex justify-center z-40">
+        <button onclick="openCart()" class="bg-red-600 px-8 py-3 rounded-full font-bold flex items-center gap-3 hover:scale-105 transition">
+            <i class="fa fa-cart-shopping"></i>
+            Ver Carrinho (<span id="cart-count">0</span>)
+        </button>
+    </footer>
+
+    <div id="cart-modal" class="cart-modal fixed inset-0 bg-black/70 z-50 items-center justify-center p-4">
+        <div class="bg-zinc-800 w-full max-w-md rounded-2xl p-6 border border-zinc-700">
+            <h2 class="text-2xl font-bold mb-4">Seu Pedido</h2>
+            <div id="cart-items" class="space-y-4 max-h-60 overflow-y-auto mb-4"></div>
+            
+            <div class="border-t border-zinc-700 pt-4">
+                <div class="flex justify-between text-xl font-bold mb-6">
+                    <span>Total:</span>
+                    <span id="cart-total text-yellow-500">R$ 0,00</span>
+                </div>
+                
+                <div class="flex flex-col gap-2">
+                    <button id="checkout-btn" onclick="sendOrder()" class="w-full py-3 rounded-xl font-bold text-lg transition"></button>
+                    <button onclick="closeCart()" class="w-full py-2 text-zinc-400">Continuar Comprando</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let cart = [];
+
+        // Atualiza o status visual da loja
+        const badge = document.getElementById("status-badge");
+        const btnFinalizar = document.getElementById("checkout-btn");
+
+        if(LOJA_ABERTA) {
+            badge.innerText = "ABERTO AGORA";
+            badge.className = "mt-4 px-6 py-2 rounded-full font-bold bg-green-600";
+            btnFinalizar.innerText = "Finalizar Pedido";
+            btnFinalizar.className = "w-full py-3 rounded-xl font-bold text-lg bg-green-500 hover:bg-green-600 text-black";
+        } else {
+            badge.innerText = "FECHADO (AGENDAMENTO)";
+            badge.className = "mt-4 px-6 py-2 rounded-full font-bold bg-red-600";
+            btnFinalizar.innerText = "Agendar Pedido";
+            btnFinalizar.className = "w-full py-3 rounded-xl font-bold text-lg bg-blue-500 hover:bg-blue-600 text-white";
+        }
+
+        function addToCart(name, price) {
+            const itemIndex = cart.findIndex(item => item.name === name);
+            if(itemIndex > -1) {
+                cart[itemIndex].qty += 1;
+            } else {
+                cart.push({ name, price, qty: 1 });
+            }
+            updateCart();
+        }
+
+        function removeFromCart(name) {
+            const itemIndex = cart.findIndex(item => item.name === name);
+            if(itemIndex > -1) {
+                if(cart[itemIndex].qty > 1) {
+                    cart[itemIndex].qty -= 1;
+                } else {
+                    cart.splice(itemIndex, 1);
+                }
+            }
+            updateCart();
+        }
+
+        function updateCart() {
+            const container = document.getElementById("cart-items");
+            const totalText = document.getElementById("cart-total text-yellow-500");
+            const countText = document.getElementById("cart-count");
+            
+            container.innerHTML = "";
+            let total = 0;
+            let count = 0;
+
+            cart.forEach(item => {
+                total += (item.price * item.qty);
+                count += item.qty;
+                container.innerHTML += `
+                    <div class="flex justify-between items-center bg-zinc-700 p-3 rounded-lg">
+                        <div>
+                            <p class="font-bold">${item.name}</p>
+                            <p class="text-sm text-yellow-500">R$ ${item.price.toFixed(2)}</p>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <button onclick="removeFromCart('${item.name}')" class="text-red-400 text-xl font-bold"> - </button>
+                            <span class="font-bold">${item.qty}</span>
+                            <button onclick="addToCart('${item.name}', ${item.price})" class="text-green-400 text-xl font-bold"> + </button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            totalText.innerText = `R$ ${total.toFixed(2).replace('.', ',')}`;
+            countText.innerText = count;
+        }
+
+        function openCart() { document.getElementById("cart-modal").classList.add("active"); }
+        function closeCart() { document.getElementById("cart-modal").classList.remove("active"); }
+
+        function sendOrder() {
+            if(cart.length === 0) return alert("Carrinho vazio!");
+            
+            let resumo = cart.map(item => `*${item.qty}x* ${item.name} (R$ ${item.price.toFixed(2)})`).join("%0A");
+            const statusStr = LOJA_ABERTA ? "PEDIDO" : "AGENDAMENTO";
+            const link = `https://wa.me/${5581997710825}?text=Olá! Gostaria de fazer um *${statusStr}*:%0A%0A${resumo}%0A%0A*Total: ${document.getElementById("cart-total text-yellow-500").innerText}*`;
+            
+            window.open(link);
+        }
+    </script>
+</body>
+</html>
